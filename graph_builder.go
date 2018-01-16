@@ -17,9 +17,9 @@
 //   3  | x     x      x      x
 //
 // Output: {
-//           [0, 0]=>0, [0, 1]=>2.24, [0, 2]=>1.0,
-//           [1, 0]=>2.24, [1, 1]=>0, [1, 2]=>1.41,
-//           [2, 0]=>1.0, [2, 1]=>1.41, [2, 2]=>0
+//           [0, 0]: 0, [0, 1]: 2.24, [0, 2]: 1.0,
+//           [1, 0]: 2.24, [1, 1]: 0, [1, 2]: 1.41,
+//           [2, 0]: 1.0, [2, 1]: 1.41, [2, 2]: 0
 //         }
 //
 // Show thats the straightline distance from:
@@ -34,22 +34,57 @@ import (
 	"fmt"
 	"github.com/gocarina/gocsv"
 	"os"
+	"math"
 )
 
-type Coords struct {
+type CoordPair struct {
 	X int `csv:"x"`
 	Y int `csv:"y"`
 }
 
-func main() {
-	data := csv()
+func build() map[[2]int]float64 {
+	// Slices cannot be used as keys as they do not have equality defined.
+	// Arrays however can be used as they do.
+	output := make(map[[2]int]float64)
 
-	for _, coord := range data {
-		fmt.Println(coord.X, coord.Y)
+	for i, coord := range csv() {
+		for inner_i, inner_coord := range csv() {
+			if i == inner_i {
+				output[[2]int{i, inner_i}] = 0
+			} else {
+				output[[2]int{i, inner_i}] = distanceCalc(coord, inner_coord)
+			}
+		}
 	}
+
+	fmt.Println("Graph Built with straight line distances:", output)
+	return output
 }
 
-func csv() []*Coords {
+
+func distanceCalc(inner_coords *CoordPair, outer_coords *CoordPair) float64 {
+	var sum_of_squares float64 = 0
+
+	inner := convertStructToSlice(inner_coords)
+	outer := convertStructToSlice(outer_coords)
+
+	for i := 0; i < len(inner); i++ {
+		var result float64 = float64(inner[i] - outer[i])
+		sum_of_squares += math.Pow(result, float64(2))
+	}
+
+	returnVal := math.Sqrt(sum_of_squares)
+	return returnVal
+}
+
+func convertStructToSlice(inputStruct *CoordPair) []int {
+	output := make([]int, 2)
+	output = append(output, inputStruct.X)
+	output = append(output, inputStruct.Y)
+	return output
+}
+
+func csv() []*CoordPair {
 	coordsFile, err := os.OpenFile("./sample.csv", os.O_RDWR|os.O_CREATE, os.ModePerm)
 
 	if err != nil {
@@ -57,7 +92,7 @@ func csv() []*Coords {
 	}
 	defer coordsFile.Close()
 
-	coords := []*Coords{}
+	coords := []*CoordPair{}
 
 	if err := gocsv.UnmarshalFile(coordsFile, &coords); err != nil { // Load coords from file
 		panic(err)
