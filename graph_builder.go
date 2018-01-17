@@ -37,15 +37,18 @@ import (
 	"math"
 )
 
+type Graph map[[2]int]float64
+
 type CoordPair struct {
 	X int `csv:"x"`
 	Y int `csv:"y"`
 }
 
-func build() map[[2]int]float64 {
+func build() Graph {
+	numNodes()
 	// Slices cannot be used as keys as they do not have equality defined.
 	// Arrays however can be used as they do.
-	output := make(map[[2]int]float64)
+	output := make(Graph)
 
 	for i, coord := range csv() {
 		for inner_i, inner_coord := range csv() {
@@ -69,8 +72,7 @@ func distanceCalc(inner_coords *CoordPair, outer_coords *CoordPair) float64 {
 	outer := convertStructToSlice(outer_coords)
 
 	for i := 0; i < len(inner); i++ {
-		var result float64 = float64(inner[i] - outer[i])
-		sum_of_squares += math.Pow(result, float64(2))
+		sum_of_squares += math.Pow(float64(inner[i] - outer[i]), float64(2))
 	}
 
 	returnVal := math.Sqrt(sum_of_squares)
@@ -82,6 +84,10 @@ func convertStructToSlice(inputStruct *CoordPair) []int {
 	output = append(output, inputStruct.X)
 	output = append(output, inputStruct.Y)
 	return output
+}
+
+func numNodes() int {
+	return len(csv())
 }
 
 func csv() []*CoordPair {
